@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Housing Sim</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── ログイン画面 ── */
+    #login-screen {
+      background: #fff;
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    #login-screen h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #1a1a2e;
+    }
+    #login-screen p {
+      color: #666;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    #password-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #password-input:focus { border-color: #4a6cf7; }
+    #login-btn {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      background: #4a6cf7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #login-btn:hover { background: #3a5ce5; }
+    #error-msg {
+      color: #e53e3e;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* ── コンテンツ画面 ── */
+    #app-content {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ログイン画面 -->
+  <div id="login-screen">
+    <h1>Housing Sim</h1>
+    <p>閲覧にはパスワードが必要です</p>
+    <input type="password" id="password-input" placeholder="パスワードを入力" autocomplete="off">
+    <button id="login-btn">ログイン</button>
+    <p id="error-msg">パスワードが正しくありません</p>
+  </div>
+
+  <!-- 認証後コンテンツ（暗号化データから復号） -->
+  <div id="app-content"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <script>
+    // ── 暗号化されたコンテンツ ──
+    // node encrypt.js <パスワード> で再生成できます
+    const ENCRYPTED_CONTENT = "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";
+
+    const loginScreen = document.getElementById('login-screen');
+    const appContent = document.getElementById('app-content');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const errorMsg = document.getElementById('error-msg');
+
+    function tryDecrypt(password) {
+      try {
+        const bytes = CryptoJS.AES.decrypt(ENCRYPTED_CONTENT, password);
+        const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+        if (decrypted && decrypted.length > 0) {
+          return decrypted;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    }
+
+    function handleLogin() {
+      const password = passwordInput.value;
+      if (!password) return;
+
+      const content = tryDecrypt(password);
+      if (content) {
+        loginScreen.style.display = 'none';
+        appContent.style.display = 'block';
+        appContent.innerHTML = content;
+        document.body.style.display = 'block';
+        document.body.style.background = '#fff';
+      } else {
+        errorMsg.style.display = 'block';
+        passwordInput.value = '';
+        passwordInput.focus();
+      }
+    }
+
+    loginBtn.addEventListener('click', handleLogin);
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLogin();
+      errorMsg.style.display = 'none';
+    });
+
+    passwordInput.focus();
+  </script>
+</body>
+</html>
